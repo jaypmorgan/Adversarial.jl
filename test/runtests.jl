@@ -5,7 +5,7 @@ using Random; Random.seed!(42)
 # External Packages
 using Adversarial.Flux
 using Adversarial.Flux.Tracker: gradient
-using Adversarial.Metalhead
+using Metalhead
 using Images: channelview
 using Images
 
