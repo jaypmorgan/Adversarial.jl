@@ -3,8 +3,8 @@ using Test
 using Random; Random.seed!(42)
 
 # External Packages
-using Adversarial.Flux
-using Adversarial.Flux.Tracker: gradient
+using Flux
+using Flux.Tracker: gradient
 using Metalhead
 using Images: channelview
 using Images
@@ -52,7 +52,7 @@ model() = Chain(
   Dense(512, 4096, relu),
   Dense(4096, 4096, relu),
   Dense(4096, 10),
-  softmax) |> gpu
+  softmax)
 m = model();
 
 # helper functions
