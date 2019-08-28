@@ -8,7 +8,6 @@ using Adversarial.Flux.Tracker: gradient
 using Adversarial.Metalhead
 using Images: channelview
 using Images
-using Plots
 
 # Test Package
 using Adversarial

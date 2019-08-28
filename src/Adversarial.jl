@@ -2,7 +2,6 @@ module Adversarial
 
 using Flux
 using Flux.Tracker: gradient
-using Metalhead
 using Distances
 
 export FGSM, PGD, JSMA
