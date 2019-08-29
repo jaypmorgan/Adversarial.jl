@@ -1,9 +1,9 @@
-# # FGSM for Adversarial Attacks
-#
-# FGSM is a simple algorithm that ...
+#' # FGSM for Adversarial Attacks
+#'
+#' FGSM is a simple algorithm that ...
 
-# first we can import the Adversarial Module and access the MNIST data
-# from Flux
+#' first we can import the Adversarial Module and access the MNIST data
+#' from Flux
 using Adversarial
 using Flux
 using Statistics
@@ -13,12 +13,12 @@ using CuArrays # comment out if a GPU is not available
 using Images
 using Plots
 
-# next we will load the trianing. For the example, we will only perform adversarial
-# attacks on this data
+#' next we will load the trianing. For the example, we will only perform adversarial
+#' attacks on this data
 train_images = MNIST.images()
 train_labels = MNIST.labels()
 
-# A function to conver the images to arrays
+#' A function to conver the images to arrays
 function minibatch(i, batch_size = 32)
     x_batch = Array{Float32}(undef, size(train_images[1])..., 1, batch_size)
     y_batch = Flux.onehotbatch(train_labels[i:i+batch_size-1], 0:9)
@@ -28,7 +28,7 @@ function minibatch(i, batch_size = 32)
     return x_batch |> gpu, y_batch |> gpu
 end
 
-# We then create and train a simple CNN.
+#' We then create and train a simple CNN.
 CNN() = Chain(
     Conv((3, 3), 1=>16, pad=(1,1), relu),
     MaxPool((2,2)),
@@ -46,7 +46,7 @@ loss(x, y) = Flux.crossentropy(m(x), y)
 acc(x, y) = mean(Flux.onecold(m(x)) |> cpu .== Flux.onecold(y) |> cpu)
 opt = ADAM()
 
-# now for our training loop...
+#' now for our training loop...
 const EPOCHS = 5
 const BATCH_SIZE = 32
 
@@ -72,10 +72,10 @@ for epoch in 1:EPOCHS
     @info "Epoch $epoch end. Loss: $(losses / steps), Acc: $(accuracies / steps)"
 end
 
-# Now that we have a "trained" model, lets create some adversarial examples
-# using the FGSM method.
-#
-# Let's begin with a single image
+#' Now that we have a "trained" model, lets create some adversarial examples
+#' using the FGSM method.
+#'
+#' Let's begin with a single image
 
 x, y = minibatch(1, 1)
 x_adv = FGSM(m, loss, x, y; ϵ = 0.07)
@@ -84,9 +84,9 @@ x_adv = FGSM(m, loss, x, y; ϵ = 0.07)
 adversarial_pred = m(x_adv) |> Flux.onecold |> getindex
 original_pred = m(x) |> Flux.onecold |> getindex
 
-# and visualise the resulting adversarial in comparison to the original image.
-# When using an ϵ value of 0.07, the different is very slight, if noticable
-# at all.
+#' and visualise the resulting adversarial in comparison to the original image.
+#' When using an ϵ value of 0.07, the different is very slight, if noticable
+#' at all.
 l = @layout [a b]
 adv = heatmap(permutedims(x_adv, (4, 3, 1, 2))[1,1,:,:] |> cpu)
 org = heatmap(permutedims(x, (4, 3, 1, 2))[1,1,:,:] |> cpu)
