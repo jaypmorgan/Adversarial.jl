@@ -20,10 +20,10 @@ function jacobian(m, x::AbstractArray{T,4}) where T
   ŷ(i) = [i == j for j = 1:k]
 
   for i in 1:k
-    xp = param(x)
+    xp = param(x)  # hacky solution... is there a better way of using back! more than once?
     y = m(xp)
     Flux.Tracker.back!(y[i])
     J[i,:,:,:] = copy(xp.grad)
   end
-  return J[:,:,:,1]  # we don't require the batch dimension
+  return J[:,:,:,1]  # don't require the batch dimension
 end
