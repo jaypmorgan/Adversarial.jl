@@ -79,11 +79,11 @@ function JSMA(model, x, t; Υ, θ, clamp_range = (0, 1))
     j = jacobian(model, x_adv)
 
     while (s != t) && iter < max_iter && !(all(Γ .== 1))
-        p1, p2 = saliency_map(j, Γ, t)
+        p1, p2 = saliency_map(jacobian(model, x_adv), Γ, t)
         p1 == nothing && break
         Γ[p1], Γ[p2] = 1, 1 # set these indexes to modified
-        x_adv[p1,:] = clamp.(x_adv[p1,:] .+ θ, clamp_range...)
-        x_adv[p2,:] = clamp.(x_adv[p2,:] .+ θ, clamp_range...)
+        x_adv[p1,:] = clamp.(x_adv[p1,:] .- θ, clamp_range...)
+        x_adv[p2,:] = clamp.(x_adv[p2,:] .- θ, clamp_range...)
         s = label(x_adv)
         iter += 1
     end
@@ -107,7 +107,7 @@ the cartesian index of the best pixels to modify.
 function saliency_map(j, Γ, t)
     p1, p2 = nothing, nothing
     for (p, q) in Base.Iterators.product(CartesianIndices(Γ), CartesianIndices(Γ))
-        ((Γ[p] == 1) || (Γ[q] == 1)) && (p == q) && continue  # skip this pixel as its already been modified
+        ((Γ[p] == 1) || (Γ[q] == 1) || (p == q)) && continue  # skip this pixel as its already been modified
 
         max = 0
         α = j[t,p] + j[t,q]
@@ -137,12 +137,21 @@ function. (https://arxiv.org/pdf/1608.04644.pdf)
     Distances.jl library or some other callable function.
 - `c`: value for the contribution of the missclassification in the error function.
 """
-function CW(model, x, t::Int; dist::Function = euclidean, c = 0.1)
-    f6_loss(x_adv) = begin
-        δ = max.(min.(x_adv, 1), 0)
-        f = max(max(model(δ)[1:end .!= t]) .- model(δ)[t], 0)
-        dist(δ, x) + c * f
+function CW(model, x, t::Int; steps::Int = 100, restarts::Int = 5, dist::Function = euclidean, c::AbstractFloat = 0.1)
+    opt = Flux.ADAM()
+    delta = zero(x) .+ Float32(1E-5)
+    r = Float32(1.0)
+    for _ in 1:restarts
+        delta = param(delta .* r) |> gpu
+        ps = params(delta)
+        for i in 1:steps
+            l = f6_loss(delta, x, t, model, dist, c)
+            g = Flux.Tracker.gradient(() -> l, ps)
+            for p in ps
+                Flux.Tracker.update!(opt, p, g[p])
+            end
+        end
+        r = maximum(delta)
     end
-    x_adv = copy(x)
-    x_adv = optimize(f6_loss, x_adv, GradientDescent(); autodiff = :forward).minimizer
+    return clamp.(x .+ delta, 0, 1) |> Tracker.data
 end

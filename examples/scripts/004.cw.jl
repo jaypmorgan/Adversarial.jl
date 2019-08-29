@@ -1,4 +1,4 @@
-#' # Using JSMA To Create Adversarial Examples
+#' # Using C&W To Create Adversarial Examples
 #'
 #'
 
@@ -71,11 +71,9 @@ for epoch in 1:EPOCHS
     @info "Epoch $epoch end. Loss: $(losses / steps), Acc: $(accuracies / steps)"
 end
 
-#'
+#' Note that C&W requires the output to be the logits not a softmax function
 x, y = minibatch(1, 1)
-y |> Flux.onecold |> getindex
-x_adv = JSMA(m, x, 9; Υ = 50, θ = 0.5)
-
+x_adv = CW(m[1:end-1], x, 9; steps = 100, c = 1.)
 
 #' we can see that the predicted labels are different
 adversarial_pred = m(x_adv) |> Flux.onecold |> getindex
