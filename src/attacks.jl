@@ -67,22 +67,23 @@ via the jacobian matrix of the output w.r.t. the input of the network.
 - `t`: Index corrosponding to the target class (this is a targeted attack).
 - `Υ`: The maximum amount of distortion
 - `θ`: The amount by which each feature is perturbed.
-
 """
 function JSMA(model, x, t; Υ, θ, clamp_range = (0, 1))
     label(in) = model(in) |> Flux.onecold |> getindex
 
     x_adv = copy(x)
     Γ = zeros(size(x,1), size(x,2))
-    max_iter = (Γ * Υ) / (2 * 100)
+    max_iter = (length(Γ) * Υ) / (2 * 100)
     s = label(x)
     iter = 0
+    j = jacobian(model, x_adv)
 
-    while (s != t) && iter < max_iter && !(all(Γ))
-        p1, p2 = saliency_map(jacobian(model, x_adv), Γ, t)
+    while (s != t) && iter < max_iter && !(all(Γ .== 1))
+        p1, p2 = saliency_map(j, Γ, t)
+        p1 == nothing && break
         Γ[p1], Γ[p2] = 1, 1 # set these indexes to modified
-        x_adv[p1...,:] = clamp.(x_adv[p1...,:] + θ, clamp_range...)
-        x_adv[p2...,:] = clamp.(x_adv[p2...,:] + θ, clamp_range...)
+        x_adv[p1,:] = clamp.(x_adv[p1,:] .+ θ, clamp_range...)
+        x_adv[p2,:] = clamp.(x_adv[p2,:] .+ θ, clamp_range...)
         s = label(x_adv)
         iter += 1
     end
@@ -104,12 +105,13 @@ the cartesian index of the best pixels to modify.
 - `t`: Target class index.
 """
 function saliency_map(j, Γ, t)
+    p1, p2 = nothing, nothing
     for (p, q) in Base.Iterators.product(CartesianIndices(Γ), CartesianIndices(Γ))
         ((Γ[p] == 1) || (Γ[q] == 1)) && (p == q) && continue  # skip this pixel as its already been modified
 
         max = 0
-        α = j[p..., t] + j[q..., t]
-        β = (sum(j[p..., :]) + sum(j[q..., :])) - α
+        α = j[t,p] + j[t,q]
+        β = (sum(j[:,p]) + sum(j[:,q])) - α
 
         if (α > 0) && (β < 0) && (-α*β > max)
             p1, p2 = p, q
