@@ -18,7 +18,7 @@ This method was proposed by Goodfellow et al. 2014 (https://arxiv.org/abs/1412.6
 function FGSM(model, loss, x, y; ϵ = 0.1, clamp_range = (0, 1))
     x, θ = param(x), params(model)
     J = gradient(() -> loss(x, y), θ)
-    x_adv = clamp.(x.data + (ϵ * sign.(x.grad)), clamp_range...)
+    x_adv = clamp.(x.data + (Float32(ϵ) * sign.(x.grad)), clamp_range...)
 end
 
 
@@ -41,10 +41,10 @@ the gradient bounded in the l∞ norm.
 - `iters`: The maximum number of iterations to run the algorithm for.
 - `clamp_range`: The lower and upper values to clamp the input to.
 """
-function PGD(model, loss, x, y; ϵ = 10, step_size = 0.1, iters = 100, clamp_range = (0, 1))
-    x_adv = x + (randn(size(x)...) * step_size); # start from the random point
+function PGD(model, loss, x, y; ϵ = 10, step_size = 0.001, iters = 100, clamp_range = (0, 1))
+    x_adv = clamp.(x + (gpu(randn(Float32, size(x)...)) * Float32(step_size)), clamp_range...); # start from the random point
     δ = chebyshev(x, x_adv)
-    while (δ < ϵ) && iter <= iters
+    iter = 1; while (δ < ϵ) && iter <= iters
         x_adv = FGSM(model, loss, x_adv, y; ϵ = step_size, clamp_range = clamp_range)
         δ = chebyshev(x, x_adv)
         iter += 1
