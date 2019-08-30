@@ -12,3 +12,29 @@ We have included some of the common methods to create adversarial examples, this
 - Projected Gradient Descent (PGD)
 - Jacobian-based Saliency Map Attack (JSMA)
 - Carlini & Wagner (CW)
+
+## Installation
+
+You can install this package through Julia's package manager:
+
+```julia
+] add https://github.com/jaypmorgan/Adversarial.jl.git
+```
+
+or:
+
+```julia
+using Pkg; Pkg.add("https://github.com/jaypmorgan/Adversarial.jl.git")
+```
+
+## Quick Start Guide
+
+As an example, we can create an adversarial image using the FGSM method: 
+
+```julia
+x_adv = FGSM(model, loss, x, y; ϵ = 0.07)
+```
+
+Where model is the FluxML model, loss is some loss function that uses a predict function, for example `crossentropy(model(x), y)`. x is the original input, y is the true class label, and \epsilon is a parameter that determines how much each pixel is changed by.
+
+More indepth examples and uses of different methods can be found in the [examples folder](examples/markdown)
