@@ -15,13 +15,13 @@ We have included some of the common methods to create adversarial examples, this
 
 ## Installation
 
-You can install this package through Julia's package manager:
+You can install this package through Julia's package manager in the REPL:
 
 ```julia
 ] add https://github.com/jaypmorgan/Adversarial.jl.git
 ```
 
-or:
+or via a script:
 
 ```julia
 using Pkg; Pkg.add("https://github.com/jaypmorgan/Adversarial.jl.git")
