@@ -1,6 +1,6 @@
 module Adversarial
 
-using Optim
+using Random
 using Flux
 using Flux.Tracker: gradient
 using Distances
@@ -9,6 +9,7 @@ export FGSM, PGD, JSMA, CW
 
 include("loss.jl")
 include("utils.jl")
-include("attacks.jl")
+include("whitebox.jl")
+include("blackbox.jl")
 
 end # module Adversarial

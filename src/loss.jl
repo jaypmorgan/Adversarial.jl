@@ -1,3 +1,6 @@
+"""
+    Loss term used in the C&W paper
+"""
 function f6_loss(δ, x, t, model, dist, c)
     diff = clamp.(x .+ δ, 0, 1)
     Z = model(diff)
