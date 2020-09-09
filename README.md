@@ -1,5 +1,7 @@
 # Adversarial.jl
 
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://jaypmorgan.github.io/Adversarial.jl/dev)
+
 Adversarial attacks for Neural Networks written with FluxML.
 
 Adversarial examples are inputs to Neural Networks (NNs) that result in a miss-classification. Through the exploitation that NNs are susceptible to slight changes (perturbations) of the input space, adversarial examples are often indistinguishable from the original input from the point of view of a human.
