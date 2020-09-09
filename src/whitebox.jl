@@ -80,7 +80,7 @@ function JSMA(model, x, t; Υ, θ, clamp_range = (0, 1))
 
     while (s != t) && iter < max_iter && !(all(Γ .== 1))
         p1, p2 = saliency_map(jacobian(model, x_adv), Γ, t)
-        p1 == nothing && break
+        p1 === nothing && break
         Γ[p1], Γ[p2] = 1, 1 # set these indexes to modified
         x_adv[p1,:] = clamp.(x_adv[p1,:] .- θ, clamp_range...)
         x_adv[p2,:] = clamp.(x_adv[p2,:] .- θ, clamp_range...)
@@ -88,37 +88,6 @@ function JSMA(model, x, t; Υ, θ, clamp_range = (0, 1))
         iter += 1
     end
     return x_adv
-end
-
-
-"""
-    saliency_map(j, Γ, t)
-
-Determine the optimal pixels to change based upon the saliency via the
-jacobian. This method is used as part of the JSMA algorithm. It returns
-the cartesian index of the best pixels to modify.
-
-## Arguments:
-- `j`: The jacobian matrix of outputs w.r.t. inputs
-- `Γ`: The matrix of pixels where 0 denotes that the pixel has yet to be
-    modified. I.e. the search space
-- `t`: Target class index.
-"""
-function saliency_map(j, Γ, t)
-    p1, p2 = nothing, nothing
-    for (p, q) in Base.Iterators.product(CartesianIndices(Γ), CartesianIndices(Γ))
-        ((Γ[p] == 1) || (Γ[q] == 1) || (p == q)) && continue  # skip this pixel as its already been modified
-
-        max = 0
-        α = j[t,p] + j[t,q]
-        β = (sum(j[:,p]) + sum(j[:,q])) - α
-
-        if (α > 0) && (β < 0) && (-α*β > max)
-            p1, p2 = p, q
-            max = -α * β
-        end
-    end
-    return p1, p2
 end
 
 
@@ -137,7 +106,8 @@ function. (https://arxiv.org/pdf/1608.04644.pdf)
     Distances.jl library or some other callable function.
 - `c`: value for the contribution of the missclassification in the error function.
 """
-function CW(model, x, t::Int; steps::Int = 100, restarts::Int = 5, dist::Function = euclidean, c::AbstractFloat = 0.1)
+function CW(model, x, t::Integer; steps::Integer = 100, restarts::Integer = 5,
+            dist::Function = euclidean, c::AbstractFloat = 0.1)
     opt = Flux.ADAM()
     delta = zero(x) .+ Float32(1E-5)
     r = Float32(1.0)
@@ -153,5 +123,23 @@ function CW(model, x, t::Int; steps::Int = 100, restarts::Int = 5, dist::Functio
         end
         r = maximum(delta)
     end
-    return clamp.(x .+ delta, 0, 1) |> Tracker.data
+    return clamp.(x .+ delta, 0, 1)
+end
+
+
+"""
+    DeepFool(model, x, overshoot = 0.02, max_iter = 50)
+
+Moosavi-Dezfooli et al.'s (https://arxiv.org/pdf/1511.04599.pdf) DeepFool method.
+
+## Arguments:
+- `model`: The flux model to attack.
+- `x`: An array of input images to create adversarial examples for.
+- `overshoot`: The halting criteria to prevent vanishing gradient.
+- `max_iter`: The maximum iterations for the algorithm.
+"""
+function DeepFool(model::Flux.Chain, x::AbstractArray,
+                  overshoot::AbstractFloat = 0.02, max_iter::Integer = 50)
+
+
 end

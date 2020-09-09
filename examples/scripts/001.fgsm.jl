@@ -65,7 +65,7 @@ for epoch in 1:EPOCHS
             update!(opt, p, g[p])
         end
 
-        losses += l |> Tracker.data
+        losses += l
         accuracies += a
         steps += 1
     end

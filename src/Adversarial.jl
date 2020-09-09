@@ -2,13 +2,13 @@ module Adversarial
 
 using Random
 using Flux
-using Flux.Tracker: gradient
 using Distances
 
-export FGSM, PGD, JSMA, CW
+export FGSM, PGD, JSMA, CW, DeepFool
 
 include("loss.jl")
 include("utils.jl")
+include("metrics.jl")
 include("whitebox.jl")
 include("blackbox.jl")
 
