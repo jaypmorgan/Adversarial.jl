@@ -16,9 +16,8 @@ This method was proposed by Goodfellow et al. 2014 (https://arxiv.org/abs/1412.6
 - `clamp_range`: Tuple consisting of the lower and upper values to clamp the input.
 """
 function FGSM(model, loss, x, y; ϵ = 0.1, clamp_range = (0, 1))
-    x, θ = param(x), params(model)
-    J = gradient(() -> loss(x, y), θ)
-    x_adv = clamp.(x.data + (Float32(ϵ) * sign.(x.grad)), clamp_range...)
+    J = gradient(() -> loss(x, y), params([x]))
+    x_adv = clamp.(x + (Float32(ϵ) * sign.(J[x])), clamp_range...)
 end
 
 
@@ -132,14 +131,76 @@ end
 
 Moosavi-Dezfooli et al.'s (https://arxiv.org/pdf/1511.04599.pdf) DeepFool method.
 
+An algorithm to determine the minimum perturbation needed to change the class
+assignment of the image. This algorithm is useful then for computing a robustness
+metric of classifiers, where as other algorithms (such as FGSM) may return
+sub-optimal solutions for generating an adversarial.
+
+The algorithm operates in a greedy way, such that, its not guaranteed to converge
+to the smallest possible perturbation (that results in an adversarial). Despite
+this shortcoming, it can often yield a class approximation.
+
+The python/matlab implementations mentioned in the paper can be found at:
+https://github.com/LTS4/DeepFool/
+
 ## Arguments:
-- `model`: The flux model to attack.
-- `x`: An array of input images to create adversarial examples for.
+- `model`: The flux model to attack before the softmax function.
+- `image`: An array of input images to create adversarial examples for. (size, W*H*C)
 - `overshoot`: The halting criteria to prevent vanishing gradient.
 - `max_iter`: The maximum iterations for the algorithm.
 """
-function DeepFool(model::Flux.Chain, x::AbstractArray,
+function DeepFool(model::Flux.Chain, image::AbstractArray,
                   overshoot::AbstractFloat = 0.02, max_iter::Integer = 50)
+    image = Flux.unsqueeze(image, 4)
+    preds = sort(model(image), dims = 1)
 
+    n_labels = size(preds, 1)
+    in_shape = size(image)
+    pert_img = copy(image)
 
+    w = zeros(in_shape)
+    r_tot = zeros(in_shape)
+
+    label = preds[1, 1]
+    kᵢ   = label
+
+    x = Params([pert_img])
+    activations = model(pert_img)
+
+    loopᵢ = 0; while (kᵢ == label) && (loopᵢ < max_iter)
+        pert = Inf
+
+        grad = gradient(x) do
+            model(pert_img)[label]
+        end
+        org_grad = grad[x]
+
+        for k = 1:n_labels
+            # zero gradient
+            cur_grad = gradient(x) do
+               model(pert_img)[preds[k]]
+            end
+            wₖ = cur_grad - org_grad
+            fₖ = (activations[preds[k], 1] - activations[label, 1]) |> abs
+
+            pertₖ = fₖ / norm(flatten(wₖ), 2)
+
+            if pertₖ < pert
+                pert = pertₖ
+                w    = wₖ
+            end
+        end
+
+        r_i = (pert + 1e-4) * w / norm(w)
+        r_tot = Float32(r_tot + r_i)
+
+        pert_img = image + (1+overshoot) * r_tot |> gpu
+        x = Params([pert_img])
+        activations = model(pert_img)
+        kᵢ = sort(activations)[1]
+        loopᵢ = loopᵢ + 1
+    end
+
+    r_tot = (1+overshoot)*r_tot
+    return pert_img, (kᵢ, r_tot, loopᵢ)
 end
