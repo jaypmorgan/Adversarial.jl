@@ -3,6 +3,7 @@ module Adversarial
 using Random
 using Flux
 using Distances
+using LinearAlgebra
 
 export FGSM, PGD, JSMA, CW, DeepFool
 

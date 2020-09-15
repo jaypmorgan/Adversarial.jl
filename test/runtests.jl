@@ -19,7 +19,6 @@ model() = Chain(Conv((5,5), 1=>10, relu),
 m = model();
 
 # helper functions
-getarray(X) = Float32.(permutedims(channelview(X), (2, 3, 1)))
 loss(x, y) = Flux.crossentropy(m(x), y)
 f(xi) = m(xi) |> Flux.onecold |> getindex
 

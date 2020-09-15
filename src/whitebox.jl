@@ -151,8 +151,11 @@ https://github.com/LTS4/DeepFool/
 """
 function DeepFool(model::Flux.Chain, image::AbstractArray,
                   overshoot::AbstractFloat = 0.02, max_iter::Integer = 50)
-    image = Flux.unsqueeze(image, 4)
-    preds = sort(model(image), dims = 1)
+
+    # remove the softmax activation if its part of the model
+    model[end] == softmax && (model = model[1:end-1])
+
+    preds = reverse(sortperm(model(image)[:,1]))
 
     n_labels = size(preds, 1)
     in_shape = size(image)
@@ -163,24 +166,17 @@ function DeepFool(model::Flux.Chain, image::AbstractArray,
 
     label = preds[1, 1]
     kᵢ   = label
-
-    x = Params([pert_img])
     activations = model(pert_img)
 
     loopᵢ = 0; while (kᵢ == label) && (loopᵢ < max_iter)
         pert = Inf
 
-        grad = gradient(x) do
-            model(pert_img)[label]
-        end
-        org_grad = grad[x]
+        grad = gradient(() -> model(pert_img)[label], params([pert_img]))
+        org_grad = grad[pert_img]
 
         for k = 1:n_labels
-            # zero gradient
-            cur_grad = gradient(x) do
-               model(pert_img)[preds[k]]
-            end
-            wₖ = cur_grad - org_grad
+            cur_grad = gradient(() -> model(pert_img)[preds[k]], params([pert_img]))
+            wₖ = cur_grad[pert_img] - org_grad
             fₖ = (activations[preds[k], 1] - activations[label, 1]) |> abs
 
             pertₖ = fₖ / norm(flatten(wₖ), 2)
@@ -192,12 +188,12 @@ function DeepFool(model::Flux.Chain, image::AbstractArray,
         end
 
         r_i = (pert + 1e-4) * w / norm(w)
-        r_tot = Float32(r_tot + r_i)
+        r_tot = Float32.(r_tot + r_i)
 
-        pert_img = image + (1+overshoot) * r_tot |> gpu
-        x = Params([pert_img])
-        activations = model(pert_img)
-        kᵢ = sort(activations)[1]
+        pert_img = Float32.(image + (1+overshoot) * r_tot)
+        x = params([pert_img])
+        activations = model(pert_img)[:,1]
+        kᵢ = argmax(activations)
         loopᵢ = loopᵢ + 1
     end
 
