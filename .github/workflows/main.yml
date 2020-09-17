@@ -16,8 +16,8 @@ jobs:
         with:
           version: 1.5
       - name: Install dependencies
-        run: 
-          python3 -m pip install z3-solver && julia -e 'using Pkg; Pkg.activate("."); Pkg.test(); Pkg.instantiate()'
+        run:
+          python3 -m pip install z3-solver && julia --project=. -e 'using Pkg; Pkg.test(); Pkg.instantiate()'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
