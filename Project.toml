@@ -1,26 +1,26 @@
 name = "Adversarial"
 uuid = "8264478e-c961-11e9-041d-dda11a3b20ed"
 authors = ["Jay Morgan <jaymiles17@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-julia = "1.3"
-Flux = "0.11"
 Distances = "0.9"
+Flux = "0.11"
+julia = "1.3"
 
 [extras]
-Optim = "429524aa-4258-5aef-a3af-852621145aeb"
-Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterTools = "35a29f4d-8980-5a13-9543-d66fff28ecb8"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
-Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Weave = "44d3d7a6-8a23-5bf8-98c5-b353f8df5ec9"
 
 [targets]
-test = ["Optim", "Plots", "Documenter", "DocumenterTools", "Images", "Metalhead", "Weave"]
+test = ["Optim", "Plots", "Documenter", "DocumenterTools", "Weave"]
