@@ -6,17 +6,17 @@
 #' from Flux
 using Adversarial
 using Flux
-using Statistics
-using Flux.Tracker: gradient, update!
+using Flux: update!
 using Flux.Data.MNIST
-using CuArrays # comment out if a GPU is not available
-using Images
+using Statistics
+# using Flux.Tracker: gradient, update!
+# using CuArrays # comment out if a GPU is not available
 using Plots
 
-#' next we will load the trianing. For the example, we will only perform adversarial
+#' next we will load the training. For the example, we will only perform adversarial
 #' attacks on this data
-train_images = MNIST.images()
-train_labels = MNIST.labels()
+train_images = MNIST.images();
+train_labels = MNIST.labels();
 
 #' A function to conver the images to arrays
 function minibatch(i, batch_size = 32)
@@ -56,17 +56,18 @@ for epoch in 1:EPOCHS
     steps = 0
 
     for i in 1:BATCH_SIZE:size(train_images,1)-BATCH_SIZE
+        local l;
         x, y = minibatch(i)
-        l = loss(x, y)
+        gs = gradient(θ) do
+            l = loss(x, y)
+            return l
+        end
         a = acc(x, y)
 
-        g = gradient(() -> l, θ)
-        for p in θ
-            update!(opt, p, g[p])
-        end
+        update!(opt, θ, gs)
 
-        losses += l
-        accuracies += a
+        losses += (l |> cpu)
+        accuracies += (a |> cpu)
         steps += 1
     end
     @info "Epoch $epoch end. Loss: $(losses / steps), Acc: $(accuracies / steps)"

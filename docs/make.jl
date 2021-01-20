@@ -11,6 +11,9 @@ makedocs(
     ),
     pages    = [
         "Home" => "index.md",
+        "Examples" => [
+            "FGSM" => "001.fgsm.md",
+        ],
         "BlackBox" => "blackbox.md",
         "WhiteBox" => "whitebox.md",
     ]
